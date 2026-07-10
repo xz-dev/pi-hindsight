@@ -18,7 +18,8 @@
     "url": "git+https://github.com/luxus/pi-hindsight.git"
   },
   "files": [
-    "extensions",
+    "dist",
+    "extension.js",
     "README.md",
     "CHANGELOG.md",
     "docs/adr",
@@ -43,11 +44,13 @@
     "format:fix": "oxfmt --write --no-error-on-unmatched-pattern \"extensions/**/*.ts\" \"tests/**/*.ts\" \"tests/**/*.mjs\" \"scripts/**/*.mjs\" \"scripts/**/*.ts\" \"docs/**/*.md\" \"README.md\" \"CONTEXT.md\" \"CONTRIBUTING.md\" \"SECURITY.md\" \"package.json\" \"package-lock.json\" \"tsconfig.json\" \"vitest.config.ts\" \".oxfmtrc.json\" \".commitlintrc.json\" \"*.yml\" \".github/**/*.yml\" \".github/**/*.md\" \"docs-site/src/content/docs/**/*.md\" \"docs-site/src/content/docs/**/*.mdx\" \"astro.config.mjs\" \"docs-site/src/content.config.ts\"",
     "surface-reference": "tsx scripts/generate-surface-reference.ts",
     "surface-reference:check": "tsx scripts/generate-surface-reference.ts --check",
+    "build:extension": "esbuild extensions/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/extension.js",
     "check": "npm run docs:check && npm run format && npm run lint && npm run typecheck && npm test",
     "check:ci": "npm run check && npm run check:coverage",
     "check:release": "npm run check && npm run check:coverage && npm run typecheck:tsc && npm run audit:signatures && npm run pack:verify && npm run smoke:hindsight",
     "install-hooks": "node scripts/install-hooks.mjs",
     "prepare": "npm run install-hooks",
+    "prepack": "npm run build:extension",
     "precommit": "npm run check",
     "test": "vitest run",
     "smoke:hindsight": "tsx scripts/smoke-hindsight.ts",
@@ -84,6 +87,7 @@
     "@vitest/coverage-v8": "^4.1.5",
     "astro": "^7.0.6",
     "astro-mermaid": "^2.0.1",
+    "esbuild": "^0.28.1",
     "mermaid": "^11.14.0",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.61.0",
@@ -106,7 +110,7 @@
   },
   "pi": {
     "extensions": [
-      "./extensions"
+      "./extension.js"
     ]
   }
 }

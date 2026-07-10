@@ -6,26 +6,31 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
+const EXEC_MAX_BUFFER = 10 * 1024 * 1024;
 
 async function main() {
   const cwd = process.cwd();
-  const pack = await execFileAsync("npm", ["pack", "--json"], { cwd });
+  const pack = await execFileAsync("npm", ["pack", "--json"], { cwd, maxBuffer: EXEC_MAX_BUFFER });
   const [entry] = JSON.parse(pack.stdout);
   if (!entry?.filename) throw new Error("npm pack did not return a tarball filename");
   const tarball = join(cwd, entry.filename);
   const dir = await mkdtemp(join(tmpdir(), "pi-hindsight-install-smoke-"));
   try {
-    await execFileAsync("npm", ["init", "-y"], { cwd: dir });
-    await execFileAsync("npm", ["install", tarball, "--ignore-scripts"], { cwd: dir });
+    await execFileAsync("npm", ["init", "-y"], { cwd: dir, maxBuffer: EXEC_MAX_BUFFER });
+    await execFileAsync("npm", ["install", tarball, "--ignore-scripts"], {
+      cwd: dir,
+      maxBuffer: EXEC_MAX_BUFFER,
+    });
     const packageJson = JSON.parse(await readFile(join(cwd, "package.json"), "utf8"));
     const packagePath = String(packageJson.name).split("/");
     const installed = JSON.parse(
       await readFile(join(dir, "node_modules", ...packagePath, "package.json"), "utf8"),
     );
-    if (!installed.pi?.extensions?.includes("./extensions")) {
+    if (!installed.pi?.extensions?.includes("./extension.js")) {
       throw new Error("installed package missing pi.extensions entry");
     }
-    await readFile(join(dir, "node_modules", ...packagePath, "extensions", "index.ts"), "utf8");
+    await readFile(join(dir, "node_modules", ...packagePath, "extension.js"), "utf8");
+    await readFile(join(dir, "node_modules", ...packagePath, "dist", "extension.js"), "utf8");
     console.log(JSON.stringify({ ok: true, package: installed.name, version: installed.version }));
   } finally {
     await rm(tarball, { force: true });
